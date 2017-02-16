@@ -250,7 +250,7 @@ TEST(Photo_CalibrateDebevec14Bit, regression)
     Mat response, expected;
     loadExposureSeq(test_path + "exposures14Bit/", images, times);
     //loadResponseCSV(test_path + "calibrate/debevec.csv", expected);
-    Ptr<CalibrateDebevec> calibrate = createCalibrateDebevec();
+    Ptr<CalibrateDebevec> calibrate = createCalibrateDebevec14Bit();
 
     calibrate->process(images, response, times);
     Mat diff = abs(response - expected);

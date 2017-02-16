@@ -595,6 +595,7 @@ response.
 rectangular grid.
  */
 CV_EXPORTS_W Ptr<CalibrateDebevec> createCalibrateDebevec(int samples = 70, float lambda = 10.0f, bool random = false);
+CV_EXPORTS_W Ptr<CalibrateDebevec> createCalibrateDebevec14Bit(int samples = 70, float lambda = 10.0f, bool random = false);
 
 /** @brief Inverse camera response function is extracted for each brightness value by minimizing an objective
 function as linear system. This algorithm uses all image pixels.
