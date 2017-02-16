@@ -71,7 +71,7 @@ Mat tringleWeights()
 
 Mat tringleWeights14Bit()
 {
-    int size = exp2(14);
+    int size = static_cast<int>(exp2(14));
     Mat w(size, 1, CV_32F);
     int half = size / 2;
     for (int i = 0; i < size; i++) {

@@ -196,12 +196,12 @@ public:
 
         CV_Assert(images.size() == times.total());
         checkImageDimensions(images);
-        CV_Assert(images[0].depth() == CV_8U);
+        CV_Assert(images[0].depth() == CV_16U);
 
         int channels = images[0].channels();
         int CV_32FCC = CV_MAKETYPE(CV_32F, channels);
-
-        dst.create(LDR_SIZE, 1, CV_32FCC);
+        int size = static_cast<int>(exp2(14));
+        dst.create(size, 1, CV_32FCC);
         Mat result = dst.getMat();
 
         std::vector<Point> sample_points;
@@ -227,7 +227,7 @@ public:
 
         std::vector<Mat> result_split(channels);
         for (int channel = 0; channel < channels; channel++) {
-            Mat A = Mat::zeros((int)sample_points.size() * (int)images.size() + LDR_SIZE + 1, LDR_SIZE + (int)sample_points.size(), CV_32F);
+            Mat A = Mat::zeros((int)sample_points.size() * (int)images.size() + size + 1, size + (int)sample_points.size(), CV_32F);
             Mat B = Mat::zeros(A.rows, 1, CV_32F);
 
             int eq = 0;
@@ -236,12 +236,12 @@ public:
 
                     int val = images[j].ptr()[3 * (sample_points[i].y * images[j].cols + sample_points[i].x) + channel];
                     A.at<float>(eq, val) = w.at<float>(val);
-                    A.at<float>(eq, LDR_SIZE + (int)i) = -w.at<float>(val);
+                    A.at<float>(eq, size + (int)i) = -w.at<float>(val);
                     B.at<float>(eq, 0) = w.at<float>(val) * log(times.at<float>((int)j));
                     eq++;
                 }
             }
-            A.at<float>(eq, LDR_SIZE / 2) = 1;
+            A.at<float>(eq, size / 2) = 1;
             eq++;
 
             for (int i = 0; i < 254; i++) {
@@ -252,7 +252,7 @@ public:
             }
             Mat solution;
             solve(A, B, solution, DECOMP_SVD);
-            solution.rowRange(0, LDR_SIZE).copyTo(result_split[channel]);
+            solution.rowRange(0, size).copyTo(result_split[channel]);
         }
         merge(result_split, result);
         exp(result, result);
