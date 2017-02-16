@@ -173,6 +173,132 @@ Ptr<CalibrateDebevec> createCalibrateDebevec(int samples, float lambda, bool ran
     return makePtr<CalibrateDebevecImpl>(samples, lambda, random);
 }
 
+
+class CalibrateDebevecImpl14Bit : public CalibrateDebevec
+{
+public:
+    CalibrateDebevecImpl14Bit(int _samples, float _lambda, bool _random) :
+        name("CalibrateDebevec14Bit"),
+        samples(_samples),
+        lambda(_lambda),
+        random(_random),
+        w(tringleWeights14Bit())
+    {
+    }
+
+    void process(InputArrayOfArrays src, OutputArray dst, InputArray _times)
+    {
+        CV_INSTRUMENT_REGION()
+
+            std::vector<Mat> images;
+        src.getMatVector(images);
+        Mat times = _times.getMat();
+
+        CV_Assert(images.size() == times.total());
+        checkImageDimensions(images);
+        CV_Assert(images[0].depth() == CV_8U);
+
+        int channels = images[0].channels();
+        int CV_32FCC = CV_MAKETYPE(CV_32F, channels);
+
+        dst.create(LDR_SIZE, 1, CV_32FCC);
+        Mat result = dst.getMat();
+
+        std::vector<Point> sample_points;
+        if (random) {
+            for (int i = 0; i < samples; i++) {
+                sample_points.push_back(Point(rand() % images[0].cols, rand() % images[0].rows));
+            }
+        }
+        else {
+            int x_points = static_cast<int>(sqrt(static_cast<double>(samples) * images[0].cols / images[0].rows));
+            int y_points = samples / x_points;
+            int step_x = images[0].cols / x_points;
+            int step_y = images[0].rows / y_points;
+
+            for (int i = 0, x = step_x / 2; i < x_points; i++, x += step_x) {
+                for (int j = 0, y = step_y / 2; j < y_points; j++, y += step_y) {
+                    if (0 <= x && x < images[0].cols &&
+                        0 <= y && y < images[0].rows)
+                        sample_points.push_back(Point(x, y));
+                }
+            }
+        }
+
+        std::vector<Mat> result_split(channels);
+        for (int channel = 0; channel < channels; channel++) {
+            Mat A = Mat::zeros((int)sample_points.size() * (int)images.size() + LDR_SIZE + 1, LDR_SIZE + (int)sample_points.size(), CV_32F);
+            Mat B = Mat::zeros(A.rows, 1, CV_32F);
+
+            int eq = 0;
+            for (size_t i = 0; i < sample_points.size(); i++) {
+                for (size_t j = 0; j < images.size(); j++) {
+
+                    int val = images[j].ptr()[3 * (sample_points[i].y * images[j].cols + sample_points[i].x) + channel];
+                    A.at<float>(eq, val) = w.at<float>(val);
+                    A.at<float>(eq, LDR_SIZE + (int)i) = -w.at<float>(val);
+                    B.at<float>(eq, 0) = w.at<float>(val) * log(times.at<float>((int)j));
+                    eq++;
+                }
+            }
+            A.at<float>(eq, LDR_SIZE / 2) = 1;
+            eq++;
+
+            for (int i = 0; i < 254; i++) {
+                A.at<float>(eq, i) = lambda * w.at<float>(i + 1);
+                A.at<float>(eq, i + 1) = -2 * lambda * w.at<float>(i + 1);
+                A.at<float>(eq, i + 2) = lambda * w.at<float>(i + 1);
+                eq++;
+            }
+            Mat solution;
+            solve(A, B, solution, DECOMP_SVD);
+            solution.rowRange(0, LDR_SIZE).copyTo(result_split[channel]);
+        }
+        merge(result_split, result);
+        exp(result, result);
+    }
+
+    int getSamples() const { return samples; }
+    void setSamples(int val) { samples = val; }
+
+    float getLambda() const { return lambda; }
+    void setLambda(float val) { lambda = val; }
+
+    bool getRandom() const { return random; }
+    void setRandom(bool val) { random = val; }
+
+    void write(FileStorage& fs) const
+    {
+        writeFormat(fs);
+        fs << "name" << name
+            << "samples" << samples
+            << "lambda" << lambda
+            << "random" << static_cast<int>(random);
+    }
+
+    void read(const FileNode& fn)
+    {
+        FileNode n = fn["name"];
+        CV_Assert(n.isString() && String(n) == name);
+        samples = fn["samples"];
+        lambda = fn["lambda"];
+        int random_val = fn["random"];
+        random = (random_val != 0);
+    }
+
+protected:
+    String name;
+    int samples;
+    float lambda;
+    bool random;
+    Mat w;
+};
+
+Ptr<CalibrateDebevec> createCalibrateDebevec14Bit(int samples, float lambda, bool random)
+{
+    return makePtr<CalibrateDebevecImpl14Bit>(samples, lambda, random);
+}
+
 class CalibrateRobertsonImpl : public CalibrateRobertson
 {
 public:

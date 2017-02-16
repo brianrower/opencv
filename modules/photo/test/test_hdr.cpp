@@ -240,6 +240,26 @@ TEST(Photo_CalibrateDebevec, regression)
     ASSERT_FALSE(max > 0.1);
 }
 
+
+TEST(Photo_CalibrateDebevec14Bit, regression)
+{
+    string test_path = string(cvtest::TS::ptr()->get_data_path()) + "hdr/";
+
+    vector<Mat> images;
+    vector<float> times;
+    Mat response, expected;
+    loadExposureSeq(test_path + "exposures14Bit/", images, times);
+    //loadResponseCSV(test_path + "calibrate/debevec.csv", expected);
+    Ptr<CalibrateDebevec> calibrate = createCalibrateDebevec();
+
+    calibrate->process(images, response, times);
+    Mat diff = abs(response - expected);
+    diff = diff.mul(1.0f / response);
+    double max;
+    minMaxLoc(diff, NULL, &max);
+    ASSERT_FALSE(max > 0.1);
+}
+
 TEST(Photo_CalibrateRobertson, regression)
 {
     string test_path = string(cvtest::TS::ptr()->get_data_path()) + "hdr/";

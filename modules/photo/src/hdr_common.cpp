@@ -69,6 +69,17 @@ Mat tringleWeights()
     return w;
 }
 
+Mat tringleWeights14Bit()
+{
+    int size = exp2(14);
+    Mat w(size, 1, CV_32F);
+    int half = size / 2;
+    for (int i = 0; i < size; i++) {
+        w.at<float>(i) = i < half ? i + 1.0f : size - i;
+    }
+    return w;
+}
+
 Mat RobertsonWeights()
 {
     Mat weight(LDR_SIZE, 1, CV_32FC3);

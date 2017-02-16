@@ -51,6 +51,7 @@ namespace cv
 void checkImageDimensions(const std::vector<Mat>& images);
 
 Mat tringleWeights();
+Mat tringleWeights14Bit();
 
 void mapLuminance(Mat src, Mat dst, Mat lum, Mat new_lum, float saturation);
 
