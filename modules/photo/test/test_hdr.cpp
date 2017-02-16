@@ -65,7 +65,7 @@ void loadExposureSeq(String path, vector<Mat>& images, vector<float>& times = DE
     string name;
     float val;
     while(list_file >> name >> val) {
-        Mat img = imread(path + name);
+        Mat img = imread(path + name, -1);
         ASSERT_FALSE(img.empty()) << "Could not load input image " << path + name;
         images.push_back(img);
         times.push_back(1 / val);

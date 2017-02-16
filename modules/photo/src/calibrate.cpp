@@ -234,7 +234,7 @@ public:
             for (size_t i = 0; i < sample_points.size(); i++) {
                 for (size_t j = 0; j < images.size(); j++) {
 
-                    int val = images[j].ptr()[3 * (sample_points[i].y * images[j].cols + sample_points[i].x) + channel];
+                    int val = images[j].ptr()[channels * (sample_points[i].y * images[j].cols + sample_points[i].x) + channel];
                     A.at<float>(eq, val) = w.at<float>(val);
                     A.at<float>(eq, size + (int)i) = -w.at<float>(val);
                     B.at<float>(eq, 0) = w.at<float>(val) * log(times.at<float>((int)j));
