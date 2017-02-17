@@ -654,6 +654,7 @@ public:
 /** @brief Creates MergeDebevec object
  */
 CV_EXPORTS_W Ptr<MergeDebevec> createMergeDebevec();
+CV_EXPORTS_W Ptr<MergeDebevec> createMergeDebevec14Bit();
 
 /** @brief Pixels are weighted using contrast, saturation and well-exposedness measures, than images are
 combined using laplacian pyramids.

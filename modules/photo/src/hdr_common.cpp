@@ -113,4 +113,14 @@ Mat linearResponse(int channels)
     return response;
 }
 
+Mat linearResponse14Bit()
+{
+    int size = static_cast<int>(exp2(14));
+    Mat response = Mat(size, 1, CV_MAKETYPE(CV_32F, 1));
+    for (int i = 0; i < size; i++) {
+        response.at<float>(i) =static_cast<float>(i);
+    }
+    return response;
+}
+
 }

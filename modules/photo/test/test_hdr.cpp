@@ -201,6 +201,33 @@ TEST(Photo_MergeDebevec, regression)
     checkEqual(expected, result, 1e-2f, "Debevec");
 }
 
+TEST(Photo_MergeDebevec14Bit, regression)
+{
+    string test_path = string(cvtest::TS::ptr()->get_data_path()) + "hdr/";
+
+    vector<Mat> images;
+    vector<float> times;
+    Mat response;
+    loadExposureSeq(test_path + "exposures14Bit/", images, times);
+    //loadResponseCSV(test_path + "exposures14Bit/response.csv", response);
+
+    Ptr<MergeDebevec> merge = createMergeDebevec14Bit();
+
+    Mat result, expected;
+    loadImage(test_path + "merge/debevec.hdr", expected);
+    //merge->process(images, result, times, response);
+    merge->process(images, result, times);
+
+    imwrite(test_path + "exposures14Bit/output.png", result * 255);
+
+    //Ptr<Tonemap> map = createTonemap();
+    //map->process(result, result);
+    //map->process(expected, expected);
+
+    //checkEqual(expected, result, 1e-2f, "Debevec");
+}
+
+
 TEST(Photo_MergeRobertson, regression)
 {
     string test_path = string(cvtest::TS::ptr()->get_data_path()) + "hdr/";

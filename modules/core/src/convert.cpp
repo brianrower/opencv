@@ -5685,13 +5685,13 @@ void cv::LUT( InputArray _src, InputArray _lut, OutputArray _dst )
     int cn = _src.channels(), depth = _src.depth();
     int lutcn = _lut.channels();
 
-    CV_Assert( (lutcn == cn || lutcn == 1) &&
+    /*CV_Assert( (lutcn == cn || lutcn == 1) &&
         _lut.total() == 256 && _lut.isContinuous() &&
         (depth == CV_8U || depth == CV_8S) );
-
+        
     CV_OCL_RUN(_dst.isUMat() && _src.dims() <= 2,
                ocl_LUT(_src, _lut, _dst))
-
+               */
     Mat src = _src.getMat(), lut = _lut.getMat();
     _dst.create(src.dims, src.size, CV_MAKETYPE(_lut.depth(), cn));
     Mat dst = _dst.getMat();

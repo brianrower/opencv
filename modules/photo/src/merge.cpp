@@ -139,6 +139,118 @@ Ptr<MergeDebevec> createMergeDebevec()
     return makePtr<MergeDebevecImpl>();
 }
 
+
+class MergeDebevecImpl14Bit : public MergeDebevec
+{
+public:
+    MergeDebevecImpl14Bit() :
+        name("MergeDebevec14Bit"),
+        weights(tringleWeights14Bit())
+    {
+    }
+
+    void process(InputArrayOfArrays src, OutputArray dst, InputArray _times, InputArray input_response)
+    {
+        CV_INSTRUMENT_REGION()
+
+        std::vector<Mat> images;
+        src.getMatVector(images);
+        Mat times = _times.getMat();
+
+        CV_Assert(images.size() == times.total());
+        checkImageDimensions(images);
+        CV_Assert(images[0].depth() == CV_16U);
+
+        int bitdepth = static_cast<int>(exp2(14));
+        int channels = images[0].channels();
+        Size size = images[0].size();
+        int CV_32FCC = CV_MAKETYPE(CV_32F, channels);
+
+        dst.create(images[0].size(), CV_32FCC);
+        Mat result = dst.getMat();
+
+        Mat response = input_response.getMat();
+
+        if (response.empty()) {
+            response = linearResponse14Bit();
+            response.at<float>(0) = response.at<float>(1);
+        }
+
+        Mat log_response;
+        log(response, log_response);
+        CV_Assert(log_response.rows == bitdepth && log_response.cols == 1 &&
+            log_response.channels() == channels);
+
+        Mat exp_values(times.clone());
+        log(exp_values, exp_values); 
+
+        result = Mat::zeros(size, CV_32FCC);
+        //std::vector<Mat> result_split;
+        //split(result, result_split);
+        Mat weight_sum = Mat::zeros(size, CV_32F);
+
+        for (size_t i = 0; i < images.size(); i++) {
+            //std::vector<Mat> splitted;
+            //split(images[i], splitted);
+
+            Mat w = Mat::zeros(size, CV_32F);
+            //for (int c = 0; c < channels; c++) {
+                //LUT(images[i], weights, images[i]);
+            Mat weighted = Mat::zeros(size, CV_32F);
+                for (int row = 0; row < images[i].rows; row++)
+                {
+                    for (int col = 0; col < images[i].cols; col++)
+                    {
+                        unsigned short val = images[i].at<unsigned short>(row, col);
+                        weighted.at<float>(row, col) = weights.at<float>(val, 0);
+                    }
+                }
+
+                w += weighted;
+            //}
+            //w /= channels;
+
+            Mat response_img = Mat::zeros(size, CV_32F);
+            //LUT(images[i], log_response, response_img);
+            for (int row = 0; row < weighted.rows; row++)
+            {
+                for (int col = 0; col < weighted.cols; col++)
+                {
+                    response_img.at<float>(row, col) = log_response.at<float>(weighted.at<float>(row, col), 0);
+                }
+            }
+            
+            //split(response_img, splitted);
+            //for (int c = 0; c < channels; c++) {
+                result += w.mul(response_img - exp_values.at<float>((int)i));
+            //}
+            weight_sum += w;
+        }
+        weight_sum = 1.0f / weight_sum;
+        //for (int c = 0; c < channels; c++) {
+            result = result.mul(weight_sum);
+        //}
+        //merge(result_split, result);
+        exp(result, result);
+    }
+
+    void process(InputArrayOfArrays src, OutputArray dst, InputArray times)
+    {
+        CV_INSTRUMENT_REGION()
+
+            process(src, dst, times, Mat());
+    }
+
+protected:
+    String name;
+    Mat weights;
+};
+
+Ptr<MergeDebevec> createMergeDebevec14Bit()
+{
+    return makePtr<MergeDebevecImpl14Bit>();
+}
+
 class MergeMertensImpl : public MergeMertens
 {
 public:
