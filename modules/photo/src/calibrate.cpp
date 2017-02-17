@@ -252,6 +252,8 @@ public:
             }
             Mat solution;
             solve(A, B, solution, DECOMP_SVD);
+            //magma_cgesvd
+
             solution.rowRange(0, size).copyTo(result_split[channel]);
         }
         merge(result_split, result);
